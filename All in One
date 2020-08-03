@@ -1,0 +1,61 @@
+echo "# 2ndWeekCode" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git remote add origin https://github.com/KaranRuparell/2ndWeekCode.git
+git push -u origin master
+    
+      
+#Split Balance Sheets Data by Year - must first be stripped of all non-numeric/useless numbers first.
+BS <- read.csv(choose.files())
+# Issue wth data.table is that it doesn't record row names, will look for a work around after adding a final layer to this.
+Yrs <- split(BS, BS$ff_fyr)
+
+# Find hwo many group will need to be made
+maxx <- max(BS$ff_fyr)
+minn <- min(BS$ff_fyr)
+  
+
+# Need all years to have own data frame, then do the NA stuff with them.
+for (i in 1 : (maxx - minn +1)) {
+  
+  #CLEAN DATA
+  df <- as.data.frame(Yrs[i]) 
+  
+  # Swaps blanks for NA
+  df[df==""] <- NA
+  
+  # af same size as df but different  
+  af <- df
+  af[is.na(af)] <- 1
+
+  
+  #Removes rows/columns that have over 8% of their entries as NA
+  j = 0
+  while (j < 10) {
+    af <- df[, colSums(is.na(df)) < 0.08 * nrow(df)] 
+    #Remove columns above Tol
+    df <- af
+   df <- af[rowSums(is.na(af)) < 0.08 * ncol(af),]
+    j = j + 1
+  }
+  
+  #Gets rid of remaining rows with NAs, will try to push this into the while statement
+  df <- df[rowSums(is.na(df)) < 1,]
+  
+  #Get name and assign it
+  nam <- paste("Year", minn + i -1, sep = "")
+  assign(nam, df)
+  
+  
+  #DO HIERARCHICAL CLUSTERING FOR EACH AND PLOT GRAPHS
+  Sheet = df
+  Size = 5
+  # t(Sheet) to make it cluster variable
+  SSheet = scale(t(Sheet))
+  d <- dist((SSheet))
+  hc <- cluster::agnes(SSheet, method = "ward")
+  plot(hc, hang = -1, main = "Original Tree")
+  
+
+}
